@@ -1,0 +1,25 @@
+#Python virtual environment
+.venv/
+venv/
+
+#Python cache files
+__pycache__/
+*.pyc
+*.pyo
+
+#Django database
+db.sqlite3
+
+#Environment variables and secrets
+.env
+.env.local
+
+#React dependencies
+node_modules/
+
+#React production build
+dist/
+
+#Editor and operating system files
+.vscode/
+.DS_Store

@@ -157,7 +157,7 @@ class TaskCreationAPITests(APITestCase):
 
         self.token = Token.objects.create(user=self.user)
 
-        self.url = reverse("task-create")
+        self.url = reverse("task-list-create")
 
         self.client.credentials(
             HTTP_AUTHORIZATION=f"Token {self.token.key}"
@@ -246,3 +246,106 @@ class TaskCreationAPITests(APITestCase):
         )
 
         self.assertEqual(Task.objects.count(), 0)
+
+
+class TaskViewingAPITests(APITestCase):
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="taskviewer",
+            email="taskviewer@example.com",
+            password="DummyPassword!2026"
+        )
+
+        self.other_user = User.objects.create_user(
+            username="otherviewer",
+            email="otherviewer@example.com",
+            password="AnotherDummyPassword!2026"
+        )
+
+        self.token = Token.objects.create(user=self.user)
+
+        self.url = reverse("task-list-create")
+
+        self.task1 = Task.objects.create(
+            owner=self.user,
+            title="My First Task",
+            description="Complete the assignment."
+        )
+
+        self.task2 = Task.objects.create(
+            owner=self.user,
+            title="My Second Task",
+            status=Task.Status.IN_PROGRESS
+        )
+
+        self.other_task = Task.objects.create(
+            owner=self.other_user,
+            title="Another User's Private Task"
+        )
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Token {self.token.key}"
+        )
+
+    def test_authenticated_user_can_view_tasks(self):
+        response = self.client.get(self.url)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK
+        )
+
+        self.assertEqual(len(response.data), 2)
+
+        titles = [task["title"] for task in response.data]
+
+        self.assertIn("My First Task", titles)
+        self.assertIn("My Second Task", titles)
+
+    def test_user_cannot_view_other_users_tasks(self):
+        response = self.client.get(self.url)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK
+        )
+
+        task_ids = [task["id"] for task in response.data]
+
+        self.assertNotIn(self.other_task.id, task_ids)
+
+        for task in response.data:
+            self.assertEqual(task["owner"], self.user.id)
+
+    def test_unauthenticated_user_cannot_view_tasks(self):
+        self.client.credentials()
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED
+        )
+
+    def test_user_without_tasks_receives_empty_list(self):
+        new_user = User.objects.create_user(
+            username="emptyuser",
+            email="emptyuser@example.com",
+            password="StrongDummyPassword!2026"
+        )
+
+        new_token = Token.objects.create(user=new_user)
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Token {new_token.key}"
+        )
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK
+        )
+
+        self.assertEqual(response.data, [])

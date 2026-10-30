@@ -1,4 +1,4 @@
-from rest_framework.generics import CreateAPIView
+from rest_framework.generics import ListCreateAPIView
 from .models import Task
 from django.contrib.auth import authenticate
 from rest_framework import status
@@ -88,7 +88,7 @@ class LogoutView(APIView):
         )
 
 
-class TaskCreateView(CreateAPIView):
+class TaskListCreateView(ListCreateAPIView):
     serializer_class = TaskSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]

@@ -1,5 +1,6 @@
+from rest_framework.generics import CreateAPIView
+from .models import Task
 from django.contrib.auth import authenticate
-
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.authentication import TokenAuthentication
@@ -7,7 +8,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import RegisterSerializer
+from .serializers import RegisterSerializer, TaskSerializer
 
 class RegisterView(APIView):
     authentication_classes = []
@@ -85,3 +86,15 @@ class LogoutView(APIView):
             {"message": "Logout successful."},
             status=status.HTTP_200_OK,
         )
+
+
+class TaskCreateView(CreateAPIView):
+    serializer_class = TaskSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Task.objects.filter(owner=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)

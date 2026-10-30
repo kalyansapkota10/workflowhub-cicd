@@ -1,3 +1,4 @@
+from .models import Task
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -41,3 +42,27 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
+
+    
+class TaskSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Task
+
+        fields = [
+            "id",
+            "owner",
+            "title",
+            "description",
+            "status",
+            "due_date",
+            "created_at",
+            "updated_at",
+        ]
+
+        read_only_fields = [
+            "id",
+            "owner",
+            "created_at",
+            "updated_at",
+        ]

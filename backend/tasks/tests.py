@@ -1,3 +1,4 @@
+from .models import Task
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
@@ -137,3 +138,111 @@ class AuthenticationAPITests(APITestCase):
             response.status_code,
             status.HTTP_401_UNAUTHORIZED
         )
+
+
+class TaskCreationAPITests(APITestCase):
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="taskowner",
+            email="taskowner@example.com",
+            password="StrongDummyPassword!2026"
+        )
+
+        self.other_user = User.objects.create_user(
+            username="anotheruser",
+            email="another@example.com",
+            password="AnotherDummyPassword!2026"
+        )
+
+        self.token = Token.objects.create(user=self.user)
+
+        self.url = reverse("task-create")
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Token {self.token.key}"
+        )
+
+    def test_authenticated_user_can_create_task(self):
+        data = {
+            "title": "Complete SOFT806 Assignment",
+            "description": "Prepare the CI/CD assignment.",
+            "due_date": "2026-11-05"
+        }
+
+        response = self.client.post(
+            self.url,
+            data,
+            format="json"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED
+        )
+
+        task = Task.objects.get(id=response.data["id"])
+
+        self.assertEqual(task.owner, self.user)
+        self.assertEqual(task.title, data["title"])
+        self.assertEqual(task.status, Task.Status.TO_DO)
+
+    def test_task_requires_title(self):
+        data = {
+            "description": "Task without a title."
+        }
+
+        response = self.client.post(
+            self.url,
+            data,
+            format="json"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST
+        )
+
+        self.assertEqual(Task.objects.count(), 0)
+
+    def test_user_cannot_assign_task_to_another_user(self):
+        data = {
+            "title": "My Task",
+            "owner": self.other_user.id
+        }
+
+        response = self.client.post(
+            self.url,
+            data,
+            format="json"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED
+        )
+
+        task = Task.objects.get(id=response.data["id"])
+
+        self.assertEqual(task.owner, self.user)
+        self.assertNotEqual(task.owner, self.other_user)
+
+    def test_unauthenticated_user_cannot_create_task(self):
+        self.client.credentials()
+
+        data = {
+            "title": "Unauthorized Task"
+        }
+
+        response = self.client.post(
+            self.url,
+            data,
+            format="json"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED
+        )
+
+        self.assertEqual(Task.objects.count(), 0)

@@ -349,3 +349,146 @@ class TaskViewingAPITests(APITestCase):
         )
 
         self.assertEqual(response.data, [])
+
+
+class TaskEditingAPITests(APITestCase):
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="taskeditor",
+            email="taskeditor@example.com",
+            password="StrongDummyPassword!2026"
+        )
+
+        self.other_user = User.objects.create_user(
+            username="othereditor",
+            email="othereditor@example.com",
+            password="AnotherDummyPassword!2026"
+        )
+
+        self.token = Token.objects.create(user=self.user)
+
+        self.task = Task.objects.create(
+            owner=self.user,
+            title="Original Task",
+            description="Original description.",
+            due_date="2026-11-05"
+        )
+
+        self.other_task = Task.objects.create(
+            owner=self.other_user,
+            title="Another User's Task"
+        )
+
+        self.url = reverse(
+            "task-detail",
+            args=[self.task.id]
+        )
+
+        self.other_url = reverse(
+            "task-detail",
+            args=[self.other_task.id]
+        )
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Token {self.token.key}"
+        )
+
+    def test_authenticated_user_can_edit_task(self):
+        data = {
+            "title": "Updated Task",
+            "description": "Updated description.",
+            "due_date": "2026-11-06"
+        }
+
+        response = self.client.patch(
+            self.url,
+            data,
+            format="json"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK
+        )
+
+        self.task.refresh_from_db()
+
+        self.assertEqual(self.task.title, "Updated Task")
+        self.assertEqual(
+            self.task.description,
+            "Updated description."
+        )
+        self.assertEqual(
+            str(self.task.due_date),
+            "2026-11-06"
+        )
+        self.assertEqual(self.task.owner, self.user)
+
+    def test_user_cannot_edit_another_users_task(self):
+        data = {
+            "title": "Unauthorized Modification"
+        }
+
+        response = self.client.patch(
+            self.other_url,
+            data,
+            format="json"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND
+        )
+
+        self.other_task.refresh_from_db()
+
+        self.assertEqual(
+            self.other_task.title,
+            "Another User's Task"
+        )
+
+    def test_unauthenticated_user_cannot_edit_task(self):
+        self.client.credentials()
+
+        data = {
+            "title": "Unauthorized Update"
+        }
+
+        response = self.client.patch(
+            self.url,
+            data,
+            format="json"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED
+        )
+
+        self.task.refresh_from_db()
+
+        self.assertEqual(self.task.title, "Original Task")
+
+    def test_invalid_due_date_is_rejected(self):
+        data = {
+            "due_date": "invalid-date"
+        }
+
+        response = self.client.patch(
+            self.url,
+            data,
+            format="json"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST
+        )
+
+        self.task.refresh_from_db()
+
+        self.assertEqual(
+            str(self.task.due_date),
+            "2026-11-05"
+        )

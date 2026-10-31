@@ -492,3 +492,192 @@ class TaskEditingAPITests(APITestCase):
             str(self.task.due_date),
             "2026-11-05"
         )
+
+
+class TaskStatusUpdateAPITests(APITestCase):
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="statususer",
+            email="statususer@example.com",
+            password="StrongDummyPassword!2026"
+        )
+
+        self.other_user = User.objects.create_user(
+            username="otherstatususer",
+            email="otherstatus@example.com",
+            password="AnotherDummyPassword!2026"
+        )
+
+        self.token = Token.objects.create(user=self.user)
+
+        self.task = Task.objects.create(
+            owner=self.user,
+            title="Complete Assignment",
+            status=Task.Status.TO_DO
+        )
+
+        self.other_task = Task.objects.create(
+            owner=self.other_user,
+            title="Another User's Task"
+        )
+
+        self.url = reverse(
+            "task-status-update",
+            args=[self.task.id]
+        )
+
+        self.other_url = reverse(
+            "task-status-update",
+            args=[self.other_task.id]
+        )
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Token {self.token.key}"
+        )
+
+    def test_update_status_to_in_progress(self):
+        data = {
+            "status": "in_progress"
+        }
+
+        response = self.client.patch(
+            self.url,
+            data,
+            format="json"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK
+        )
+
+        self.task.refresh_from_db()
+
+        self.assertEqual(
+            self.task.status,
+            Task.Status.IN_PROGRESS
+        )
+
+    def test_update_status_to_done(self):
+        data = {
+            "status": "done"
+        }
+
+        response = self.client.patch(
+            self.url,
+            data,
+            format="json"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK
+        )
+
+        self.task.refresh_from_db()
+
+        self.assertEqual(
+            self.task.status,
+            Task.Status.DONE
+        )
+
+    def test_invalid_status_is_rejected(self):
+        data = {
+            "status": "cancelled"
+        }
+
+        response = self.client.patch(
+            self.url,
+            data,
+            format="json"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST
+        )
+
+        self.task.refresh_from_db()
+
+        self.assertEqual(
+            self.task.status,
+            Task.Status.TO_DO
+        )
+
+    def test_user_cannot_update_another_users_task_status(self):
+        data = {
+            "status": "done"
+        }
+
+        response = self.client.patch(
+            self.other_url,
+            data,
+            format="json"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND
+        )
+
+        self.other_task.refresh_from_db()
+
+        self.assertEqual(
+            self.other_task.status,
+            Task.Status.TO_DO
+        )
+
+    def test_unauthenticated_user_cannot_update_status(self):
+        self.client.credentials()
+
+        data = {
+            "status": "in_progress"
+        }
+
+        response = self.client.patch(
+            self.url,
+            data,
+            format="json"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED
+        )
+
+        self.task.refresh_from_db()
+
+        self.assertEqual(
+            self.task.status,
+            Task.Status.TO_DO
+        )
+
+    def test_status_endpoint_cannot_modify_task_title(self):
+        data = {
+            "status": "done",
+            "title": "Unauthorized Title Change"
+        }
+
+        response = self.client.patch(
+            self.url,
+            data,
+            format="json"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK
+        )
+
+        self.task.refresh_from_db()
+
+        self.assertEqual(
+            self.task.status,
+            Task.Status.DONE
+        )
+
+        self.assertEqual(
+            self.task.title,
+            "Complete Assignment"
+        )

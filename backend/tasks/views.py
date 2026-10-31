@@ -1,4 +1,4 @@
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateAPIView
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateAPIView, UpdateAPIView
 from .models import Task
 from django.contrib.auth import authenticate
 from rest_framework import status
@@ -8,7 +8,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import RegisterSerializer, TaskSerializer
+from .serializers import RegisterSerializer, TaskSerializer, TaskStatusSerializer
 
 class RegisterView(APIView):
     authentication_classes = []
@@ -104,6 +104,16 @@ class TaskDetailUpdateView(RetrieveUpdateAPIView):
     serializer_class = TaskSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Task.objects.filter(owner=self.request.user)
+
+
+class TaskStatusUpdateView(UpdateAPIView):
+    serializer_class = TaskStatusSerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+    http_method_names = ["patch", "options"]
 
     def get_queryset(self):
         return Task.objects.filter(owner=self.request.user)

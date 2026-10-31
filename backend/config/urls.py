@@ -16,11 +16,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from tasks.views import TaskListCreateView, TaskDetailUpdateView
+from tasks.views import TaskListCreateView, TaskDetailUpdateView, TaskStatusUpdateView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('tasks.urls')),
     path("api/tasks/", TaskListCreateView.as_view(), name="task-list-create"),
     path("api/tasks/<int:pk>/", TaskDetailUpdateView.as_view(), name="task-detail"),
+    path("api/tasks/<int:pk>/status/", TaskStatusUpdateView.as_view(), name="task-status-update"),
 ]

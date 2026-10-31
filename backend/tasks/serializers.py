@@ -66,3 +66,13 @@ class TaskSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
+
+
+class TaskStatusSerializer(serializers.ModelSerializer):
+    status = serializers.ChoiceField(
+        choices=Task.Status.choices
+    )
+
+    class Meta:
+        model = Task
+        fields = ["status"]

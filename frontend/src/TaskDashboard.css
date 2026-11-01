@@ -1,0 +1,148 @@
+.task-layout {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.task-form-card,
+.task-list-card {
+  padding: 28px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.task-form-card h2,
+.task-list-card h2 {
+  margin: 0 0 24px;
+  font-size: 20px;
+  color: #1e293b;
+}
+
+.task-form-card textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  resize: vertical;
+  outline: none;
+}
+
+.task-form-card textarea:focus {
+  border-color: #6366f1;
+}
+
+.cancel-button {
+  width: 100%;
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.task-list-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.task-list-heading span {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.task-item {
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.task-item h3 {
+  margin: 0 0 10px;
+  font-size: 17px;
+}
+
+.task-item p {
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.task-date {
+  font-size: 13px;
+}
+
+.task-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.task-bottom select {
+  padding: 9px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: white;
+}
+
+.task-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.edit-button,
+.delete-button {
+  padding: 9px 14px;
+  border: none;
+  border-radius: 7px;
+  font-size: 13px;
+}
+
+.edit-button {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.delete-button {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.empty-message {
+  padding: 30px;
+  text-align: center;
+  color: #64748b;
+}
+
+@media (max-width: 900px) {
+  .task-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 500px) {
+  .task-form-card,
+  .task-list-card {
+    padding: 18px;
+  }
+
+  .task-bottom {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .task-actions {
+    justify-content: flex-end;
+  }
+}

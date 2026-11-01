@@ -681,3 +681,103 @@ class TaskStatusUpdateAPITests(APITestCase):
             self.task.title,
             "Complete Assignment"
         )
+
+
+class TaskDeletionAPITests(APITestCase):
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="deleteuser",
+            email="deleteuser@example.com",
+            password="StrongDummyPassword!2026"
+        )
+
+        self.other_user = User.objects.create_user(
+            username="otherdeleteuser",
+            email="otherdelete@example.com",
+            password="AnotherDummyPassword!2026"
+        )
+
+        self.token = Token.objects.create(user=self.user)
+
+        self.task = Task.objects.create(
+            owner=self.user,
+            title="Task To Delete"
+        )
+
+        self.other_task = Task.objects.create(
+            owner=self.other_user,
+            title="Another User's Task"
+        )
+
+        self.url = reverse(
+            "task-detail",
+            args=[self.task.id]
+        )
+
+        self.other_url = reverse(
+            "task-detail",
+            args=[self.other_task.id]
+        )
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Token {self.token.key}"
+        )
+
+    def test_user_can_delete_own_task(self):
+        response = self.client.delete(self.url)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_204_NO_CONTENT
+        )
+
+        self.assertFalse(
+            Task.objects.filter(id=self.task.id).exists()
+        )
+
+        get_response = self.client.get(self.url)
+
+        self.assertEqual(
+            get_response.status_code,
+            status.HTTP_404_NOT_FOUND
+        )
+
+    def test_user_cannot_delete_another_users_task(self):
+        response = self.client.delete(self.other_url)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND
+        )
+
+        self.assertTrue(
+            Task.objects.filter(id=self.other_task.id).exists()
+        )
+
+    def test_unauthenticated_user_cannot_delete_task(self):
+        self.client.credentials()
+
+        response = self.client.delete(self.url)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_401_UNAUTHORIZED
+        )
+
+        self.assertTrue(
+            Task.objects.filter(id=self.task.id).exists()
+        )
+
+    def test_deleting_nonexistent_task_returns_404(self):
+        nonexistent_url = reverse(
+            "task-detail",
+            args=[99999]
+        )
+
+        response = self.client.delete(nonexistent_url)
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_404_NOT_FOUND
+        )

@@ -1,0 +1,35 @@
+# Node.js dependencies
+node_modules/
+
+# Production build files
+dist/
+build/
+
+# Vite cache
+.vite/
+
+# Environment configuration
+.env
+.env.*
+!.env.example
+
+# Git files
+.git/
+.gitignore
+
+# Editor configuration
+.vscode/
+
+# Test coverage
+coverage/
+
+# Log files
+*.log
+npm-debug.log*
+
+# Local npm configuration
+.npmrc
+
+# Operating system files
+.DS_Store
+Thumbs.db

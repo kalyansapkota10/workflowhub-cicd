@@ -1,4 +1,4 @@
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateAPIView, UpdateAPIView
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, UpdateAPIView
 from .models import Task
 from django.contrib.auth import authenticate
 from rest_framework import status
@@ -100,7 +100,7 @@ class TaskListCreateView(ListCreateAPIView):
         serializer.save(owner=self.request.user)
 
 
-class TaskDetailUpdateView(RetrieveUpdateAPIView):
+class TaskDetailView(RetrieveUpdateDestroyAPIView):
     serializer_class = TaskSerializer
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]

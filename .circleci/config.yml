@@ -1,0 +1,76 @@
+version: 2.1
+
+jobs:
+
+  # Job 1: Test Django Backend
+  backend-tests:
+    docker:
+      - image: cimg/python:3.12
+
+    steps:
+      - checkout
+
+      - run:
+          name: Install Python dependencies
+          command: pip install -r backend/requirements.txt
+
+      - run:
+          name: Check Django and run automated tests
+          command: |
+            export DJANGO_SECRET_KEY=$(python -c 'import secrets; print(secrets.token_urlsafe(48))')
+            python backend/manage.py check
+            python backend/manage.py test tasks
+
+
+  # Job 2: Check React Frontend
+  frontend-checks:
+    docker:
+      - image: cimg/node:24.0
+
+    steps:
+      - checkout
+
+      - run:
+          name: Install frontend dependencies
+          command: cd frontend && npm ci
+
+      - run:
+          name: Run ESLint
+          command: cd frontend && npm run lint
+
+      - run:
+          name: Build React application
+          command: cd frontend && npm run build
+
+
+  # Job 3: Build Docker Images
+  docker-builds:
+    docker:
+      - image: cimg/base:current
+
+    steps:
+      - checkout
+
+      - setup_remote_docker
+
+      - run:
+          name: Build Django Docker image
+          command: docker build -t workflowhub-backend:ci ./backend
+
+      - run:
+          name: Build React Docker image
+          command: docker build -t workflowhub-frontend:ci ./frontend
+
+
+workflows:
+
+  workflowhub-ci:
+    jobs:
+      - backend-tests
+
+      - frontend-checks
+
+      - docker-builds:
+          requires:
+            - backend-tests
+            - frontend-checks
